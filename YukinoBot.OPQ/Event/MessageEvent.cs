@@ -35,7 +35,7 @@ public class MessageEvent : IInMessage
             return $"{MessageBody!.Content}";
         }
         // 私聊消息，图片或文字消息
-        if (MessageHead.MsgType == 141) return $"{MessageBody!.Content} [$media:image]";
+         if (MessageHead.MsgType == 141 && MessageBody is not null) return $"{MessageBody!.Content} [$media:image]";
 
         // 未识别消息
         // TODO 删除临时测试代码
