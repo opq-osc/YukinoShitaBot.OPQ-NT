@@ -14,7 +14,11 @@ namespace YukinoBot.OPQ.Net.Tests
         [TestMethod()]
         public void StartTest()
         {
-            var client = new OpqClient();
+            var client = new OpqClient(new Configuration.OpqOptions
+            {
+                Host = "ng.baidu.com:8086",
+                Uin = 501604732
+            });
             client.Start().Wait();
             while (true) ;
         }

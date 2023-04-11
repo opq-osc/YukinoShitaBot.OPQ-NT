@@ -1,21 +1,24 @@
-﻿using Microsoft.Extensions.Configuration;
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using YukinoBot.Abstraction;
+using YukinoBot.OPQ.Configuration;
 
 namespace YukinoBot.OPQ.Net
 {
     public class OpqApi : IMessageSender
     {
-        public OpqApi(HttpClient httpClient)
+        public OpqApi(OpqOptions options)
         {
-            this.httpClient = httpClient;
-            httpClient.BaseAddress = new Uri("http://ng.baidu.com:8086/v1/LuaApiCaller");
+            httpClient = new HttpClient
+            {
+                BaseAddress = new Uri($"http://{options.Host}/v1/LuaApiCaller")
+            };
+            url = $"?funcname=MagicCgiCmd&timeout=10&qq={options.Uin}";
         }
 
         private readonly HttpClient httpClient;
-        private readonly string url = $"?funcname=MagicCgiCmd&timeout=10&qq=501604732";
+        private readonly string url;
 
         public void Send(IOutMessage message)
         {

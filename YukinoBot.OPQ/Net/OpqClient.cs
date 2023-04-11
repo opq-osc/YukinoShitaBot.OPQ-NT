@@ -1,6 +1,7 @@
 ﻿using System.Net.WebSockets;
 using System.Text.Json;
 using YukinoBot.Abstraction;
+using YukinoBot.OPQ.Configuration;
 using YukinoBot.OPQ.Event;
 using YukinoBot.OPQ.Event.Base;
 
@@ -8,16 +9,17 @@ namespace YukinoBot.OPQ.Net
 {
     public class OpqClient : IMessageReceiver
     {
-        public OpqClient()
+        public OpqClient(OpqOptions options)
         {
             cancelationSource = new CancellationTokenSource();
             this.socket = new ClientWebSocket();
             socket.Options.KeepAliveInterval = TimeSpan.FromSeconds(5);
+            url = $"ws://{options.Host}/ws";
         }
 
         private readonly ClientWebSocket socket;
         private readonly CancellationTokenSource cancelationSource;
-        private readonly string url = "ws://ng.baidu.com:8086/ws";
+        private readonly string url;
         private Thread? workerThread;
 
         public async Task Start()

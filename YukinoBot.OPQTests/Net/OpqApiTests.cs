@@ -16,7 +16,11 @@ namespace YukinoBot.OPQ.Net.Tests
         public void SendTextTest()
         {
             var msgBuilder = new MessageBuilder();
-            var api = new OpqApi(new HttpClient());
+            var api = new OpqApi(new Configuration.OpqOptions
+            {
+                Host = "ng.baidu.com:8086",
+                Uin = 501604732
+            });
             var msg1 = msgBuilder.CreateGroup(689857269)
                                 .WithContent("test测试123")
                                 .At(1137361788)
