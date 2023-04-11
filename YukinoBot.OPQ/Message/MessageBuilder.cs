@@ -6,10 +6,10 @@ namespace YukinoBot.OPQ.Message;
 
 public class MessageBuilder : IMessageBuilder
 {
-    private string content = string.Empty;
-    private IList<MultiMedia>? images;
-    private MultiMedia? voice;
-    private IList<Uin>? at;
+    internal string Content { get; set; } = string.Empty;
+    internal IList<MultiMedia>? Images { get; set; }
+    internal MultiMedia? Voice { get; set; }
+    internal IList<Uin>? AtList { get; set; }
 
     internal long Uid { get; set; }
     internal int ToType { get; set; }
@@ -17,26 +17,26 @@ public class MessageBuilder : IMessageBuilder
 
     public IMessageBuilder At(long uid)
     {
-        at ??= new List<Uin>();
-        at.Add(new Uin { UserId = uid });
+        AtList ??= new List<Uin>();
+        AtList.Add(new Uin { UserId = uid });
         return this;
     }
 
     public IMessageBuilder AddImage(string key)
     {
-        images ??= new List<MultiMedia>();
+        Images ??= new List<MultiMedia>();
         return this;
     }
 
     public IMessageBuilder WithContent(string content)
     {
-        this.content = content;
+        this.Content = content;
         return this;
     }
 
     public IMessageBuilder WithVoice(string key)
     {
-        this.voice = new MultiMedia();
+        this.Voice = new MultiMedia();
         return this;
     }
 
@@ -46,11 +46,11 @@ public class MessageBuilder : IMessageBuilder
         {
             CgiRequest = new OutMessage()
             {
-                Images = images,
-                Content = content,
+                Images = Images,
+                Content = Content,
                 ToUin = Uid,
-                AtUinLists = at,
-                Voice = voice,
+                AtUinLists = AtList,
+                Voice = Voice,
                 GroupCode = GroupCode,
                 ToType= ToType,
             }

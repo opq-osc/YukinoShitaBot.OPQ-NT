@@ -12,5 +12,6 @@ public interface IInMessage
     bool TryGetVideo([NotNullWhen(true)]out string? video);
 
     IMessageBuilder CreateReply();
+    IMessageBuilder CreateRepeat();
 }
 

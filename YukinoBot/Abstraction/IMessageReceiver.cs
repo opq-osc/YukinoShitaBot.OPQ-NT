@@ -2,9 +2,10 @@
 
 public interface IMessageReceiver
 {
-    void OnMessage<T>(T message) where T : IInMessage;
-    void OnEvent<T>(T message) where T : IEvent;
+    event EventHandler<IInMessage>? OnMessage;
+    event EventHandler<IEvent>? OnEvent;
 
     Task Start();
+    void Stop();
 }
 
