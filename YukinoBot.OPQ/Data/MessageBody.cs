@@ -6,7 +6,7 @@ public class MessageBody
     public string Content { get; set; } = null!;
     public IList<Uin>? AtUinLists { get; set; }
     public IList<MultiMedia>? Images { get; set; }
-    public MultiMedia? Vidio { get; set; }
+    public MultiMedia? Video { get; set; }
     public MultiMedia? Voice { get; set; }
 }
 

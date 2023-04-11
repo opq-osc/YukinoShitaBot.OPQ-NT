@@ -13,7 +13,7 @@ namespace YukinoBot.OPQ.Net
         {
             cancelationSource = new CancellationTokenSource();
             this.socket = new ClientWebSocket();
-            socket.Options.KeepAliveInterval = TimeSpan.FromSeconds(5);
+            socket.Options.KeepAliveInterval = TimeSpan.FromSeconds(3);
             url = $"ws://{options.Host}/ws";
         }
 
@@ -74,11 +74,18 @@ namespace YukinoBot.OPQ.Net
         // TODO HandleEvent
         private void HandleEvent(SocketEvent socketEvent)
         {
-            //if (socketEvent.CurrentPacket.EventName == "ON_EVENT_GROUP_NEW_MSG")
-            //{
-            //    var msg = socketEvent.CurrentPacket.EventData.Root.Deserialize<MessageEvent>();
+            if (socketEvent.CurrentPacket.EventName == "ON_EVENT_FRIEND_NEW_MSG")
+            {
+                var msg = socketEvent.CurrentPacket.EventData.Root.Deserialize<MessageEvent>();
                 
-            //}
+                ;
+            }
+
+            if (socketEvent.CurrentPacket.EventName == "ON_EVENT_GROUP_NEW_MSG")
+            {
+                var msg = socketEvent.CurrentPacket.EventData.Root.Deserialize<MessageEvent>();
+                ;
+            }
         }
 
         public void OnEvent<T>(T message) where T : IEvent

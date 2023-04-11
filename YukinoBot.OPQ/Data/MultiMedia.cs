@@ -8,7 +8,7 @@ public class MultiMedia
 
     public int FileSize { get; set; }
 
-    public int? FileId { get; set; }
+    public long? FileId { get; set; }
 
     public string? Url { get; set; }
 }
