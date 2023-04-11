@@ -15,6 +15,7 @@ public class MessageEvent : IInMessage
     [JsonPropertyName("MsgBody")]
     public MessageBody? MessageBody { get; set; }
 
+    [JsonIgnore]
     public string Content => GenerateContent();
 
     private string GenerateContent()
@@ -44,6 +45,8 @@ public class MessageEvent : IInMessage
     }
 
     private HashSet<long>? atList;
+
+    [JsonIgnore]
     public HashSet<long> AtList => atList ??= new HashSet<long>(MessageBody?.AtUinLists?.Select(x => x.UserId) 
                                               ?? Enumerable.Empty<long>());
 
