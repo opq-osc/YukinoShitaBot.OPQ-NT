@@ -14,16 +14,12 @@ namespace YukinoBot.OPQ.Net
         public OpqClient(OpqOptions options, ILogger<OpqClient> logger)
         {
             cancelationSource = new CancellationTokenSource();
-            this.socket = new ClientWebSocket();
-            socket.Options.KeepAliveInterval = TimeSpan.FromSeconds(1);
-            socket.Options.HttpVersion = HttpVersion.Version11;
-            socket.Options.HttpVersionPolicy = HttpVersionPolicy.RequestVersionExact;
             url = $"ws://{options.Host}/ws";
             uin = options.Uin;
             this.logger = logger;
         }
 
-        private readonly ClientWebSocket socket;
+        private ClientWebSocket? socket;
         private readonly CancellationTokenSource cancelationSource;
         private readonly string url;
         private Thread? workerThread;
@@ -36,25 +32,36 @@ namespace YukinoBot.OPQ.Net
 
         public async Task Start()
         {
-            if (socket.State == WebSocketState.Open)
-            {
-                socket.Abort();
-                logger.LogInformation("socket closed.");
-            }
-            await socket.ConnectAsync(new Uri(url), cancelationSource.Token);
+            socket?.Dispose();
+            this.socket = new ClientWebSocket();
+            socket.Options.KeepAliveInterval = TimeSpan.FromSeconds(1);
+            socket.Options.HttpVersion = HttpVersion.Version11;
+            socket.Options.HttpVersionPolicy = HttpVersionPolicy.RequestVersionExact;
 
-            while (socket.State == WebSocketState.Connecting) Thread.SpinWait(1000);
-            if (socket.State != WebSocketState.Open)
+            try
             {
-                throw new ApplicationException("socket connect failed.");
-            }
-            logger.LogInformation("socket connected.");
+                await socket.ConnectAsync(new Uri(url), cancelationSource.Token);
 
-            workerThread = new Thread(Receive)
+                while (socket.State == WebSocketState.Connecting) Thread.SpinWait(1000);
+                if (socket.State != WebSocketState.Open)
+                {
+                    throw new ApplicationException("socket connect failed.");
+                }
+                logger.LogInformation("socket connected.");
+
+                workerThread = new Thread(Receive)
+                {
+                    IsBackground = true
+                };
+                workerThread.Start();
+            }
+            catch (Exception ex)
             {
-                IsBackground = true
-            };
-            workerThread.Start();
+                logger.LogWarning("Exception while starting socket: {Message}", ex.Message);
+                logger.LogWarning("Reconnect after 10s");
+                await Task.Delay(10000);
+                await Start();
+            }
         }
 
         public void Stop()
@@ -67,7 +74,7 @@ namespace YukinoBot.OPQ.Net
             var buffer = new byte[8192];
             while (!cancelationSource.IsCancellationRequested)
             {
-                if (socket.State != WebSocketState.Open) break;
+                if (socket?.State != WebSocketState.Open) break;
                 try
                 {
                     var result = socket.ReceiveAsync(buffer, cancelationSource.Token).Result;
@@ -88,6 +95,10 @@ namespace YukinoBot.OPQ.Net
                 catch (AggregateException ex)
                 {
                     if (ex.InnerException is WebSocketException) break;
+                    else
+                    {
+                        Console.WriteLine(ex?.InnerException?.Message);
+                    }
                 }
             }
             Start().Wait();
@@ -100,6 +111,11 @@ namespace YukinoBot.OPQ.Net
             {
                 case "ON_EVENT_FRIEND_NEW_MSG" or "ON_EVENT_GROUP_NEW_MSG":
                     var msg = socketEvent.CurrentPacket.EventData.Root.Deserialize<MessageEvent>();
+                    if (msg is null)
+                    {
+                        Console.WriteLine("未识别消息类型");
+                        File.WriteAllText(Guid.NewGuid().ToString() + ".json", socketEvent.CurrentPacket.EventData.ToJsonString());
+                    }
                     if (msg is null || msg.MessageHead.SenderUin == uin) return;
                     OnMessage?.Invoke(this, msg);
                     break;
