@@ -15,6 +15,7 @@ public class Message : IMessage<User, Media>
     public IEnumerable<User> AtUsers { get; set; } = null!;
     public string Content { get; set; } = null!;
     public string Route { get; set; } = null!;
+    public string Source { get; set; } = null!;
     public DateTime Time { get; set; }
 
     [JsonIgnore, NotMapped]

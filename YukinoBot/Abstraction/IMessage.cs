@@ -13,6 +13,7 @@ public interface IMessage
     long Id { get; }
     string Content { get; }
     string Route { get; }
+    string Source { get; }
     DateTime Time { get; }
 
     IUser From { get; }

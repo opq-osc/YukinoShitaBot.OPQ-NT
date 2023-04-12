@@ -9,7 +9,8 @@ public interface IMessageBuilder
 {
     IMessage Build();
 
-    IMessageBuilder Content(string content);
+    IMessageBuilder WithContent(string content);
     IMessageBuilder AddMedia(IMedia media);
     IMessageBuilder AtUser(IUser user);
+    IMessageBuilder SendTo(IUser user);
 }

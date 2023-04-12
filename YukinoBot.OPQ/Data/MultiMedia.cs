@@ -1,6 +1,8 @@
-﻿namespace YukinoBot.OPQ.Data;
+﻿using YukinoBot.Entity;
 
-public class MultiMedia
+namespace YukinoBot.OPQ.Data;
+
+public class MultiMedia : Media
 {
     public string FileMd5 { get; set; } = null!;
 
@@ -9,6 +11,4 @@ public class MultiMedia
     public int FileSize { get; set; }
 
     public long? FileId { get; set; }
-
-    public string? Url { get; set; }
 }

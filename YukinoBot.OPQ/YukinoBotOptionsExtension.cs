@@ -1,31 +1,25 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using YukinoBot.Abstraction;
 using YukinoBot.OPQ.Configuration;
 using YukinoBot.OPQ.Message;
 using YukinoBot.OPQ.Net;
 
-namespace YukinoBot.OPQ
+namespace YukinoBot.OPQ;
+
+public static class YukinoBotOptionsExtension
 {
-    public static class YukinoBotOptionsExtension
+    public static YukinoBotOptions UseOpqBot(this YukinoBotOptions botOptions, Action<OpqOptions> configOptions)
     {
-        public static YukinoBotOptions UseOpqBot(this YukinoBotOptions botOptions, Action<OpqOptions> configOptions)
-        {
-            var opt = new OpqOptions();
-            var services = botOptions.Services;
+        var opt = new OpqOptions();
+        var services = botOptions.Services;
 
-            configOptions.Invoke(opt);
-            services.AddSingleton(opt);
+        configOptions.Invoke(opt);
+        services.AddSingleton(opt);
 
-            services.AddSingleton<IMessageSender, OpqApi>();
-            services.AddSingleton<IMessageReceiver, OpqClient>();
-            services.AddSingleton<IMessageBuilder, MessageBuilder>();
+        services.AddSingleton<IMessageSender, OpqApi>();
+        services.AddSingleton<IMessageReceiver, OpqClient>();
+        services.AddSingleton<IMessageBuilderFactory, MessageBuilderFactory>();
 
-            return botOptions;
-        }
+        return botOptions;
     }
 }

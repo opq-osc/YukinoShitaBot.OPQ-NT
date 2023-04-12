@@ -4,21 +4,36 @@ using YukinoBot.Abstraction;
 
 namespace YukinoBot.Entity;
 
-public class User : IUser<long>
+public class User : IUser<long>, IEquatable<User?>
 {
     [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int InnerId { get; set; }
 
-    public long Id { get; set; }
+    public long SenderId { get; set; }
 
     public string Nick { get; set; } = null!;
 
     public long? GroupId { get; set; }
 
-    public long GetUserId() => Id;
+    public long GetUserId() => SenderId;
 
     public string GetUserName() => Nick;
 
-    string IUser.GetUserId() => Id.ToString();
-}
+    string IUser.GetUserId() => SenderId.ToString();
 
+    public override bool Equals(object? obj)
+    {
+        return obj is User user && Equals(user);
+    }
+
+    public bool Equals(User? other)
+    {
+        return other is not null &&
+               SenderId == other.SenderId;
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(SenderId);
+    }
+}

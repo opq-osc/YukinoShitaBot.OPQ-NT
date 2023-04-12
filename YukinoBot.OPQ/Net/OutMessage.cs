@@ -1,6 +1,6 @@
 ﻿using YukinoBot.OPQ.Data;
 
-namespace YukinoBot.OPQ.Message;
+namespace YukinoBot.OPQ.Net;
 
 public class OutMessage
 {

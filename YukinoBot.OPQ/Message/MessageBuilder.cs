@@ -1,74 +1,73 @@
 ﻿using YukinoBot.Abstraction;
-using YukinoBot.OPQ.Data;
-using YukinoBot.OPQ.Net;
+using YukinoBot.Entity;
 
 namespace YukinoBot.OPQ.Message;
 
-public class MessageBuilder : IMessageBuilder
+public class MessageBuilder : IMessageBuilder<Entity.Message>
 {
-    internal string Content { get; set; } = string.Empty;
-    internal IList<MultiMedia>? Images { get; set; }
-    internal MultiMedia? Voice { get; set; }
-    internal IList<Uin>? AtList { get; set; }
+    public List<Media>? Medias { get; internal set; }
+    public List<User>? AtUsers { get; internal set; }
+    public string Content { get; internal set; } = string.Empty;
+    public User Sender { get; internal set; } = null!;
+    public User? Receiver { get; set; }
 
-    internal long Uid { get; set; }
-    internal int ToType { get; set; }
-    internal long? GroupCode { get; set; }
-
-    public IMessageBuilder At(long uid)
+    public Entity.Message Build()
     {
-        AtList ??= new List<Uin>();
-        AtList.Add(new Uin { UserId = uid });
+        if (Receiver is null || Sender is null)
+        {
+            throw new InvalidOperationException("Sender or Receiver is null");
+        }
+        return new Entity.Message
+        {
+            Content = Content,
+            Medias = Medias ?? Enumerable.Empty<Media>(),
+            AtUsers = AtUsers ?? Enumerable.Empty<User>(),
+            From = Sender,
+            To = Receiver,
+            Time = DateTime.UtcNow,
+        };
+    }
+
+    public IMessageBuilder AddMedia(IMedia media)
+    {
+        if (media is not Media m)
+        {
+            throw new ArgumentException("media must be type Media", nameof(media));
+        }
+        Medias ??= new();
+        Medias.Add(m);
         return this;
     }
 
-    public IMessageBuilder AddImage(string key)
+    public IMessageBuilder AtUser(IUser user)
     {
-        Images ??= new List<MultiMedia>();
+        if (user is not User u)
+        {
+            throw new ArgumentException("user must be type User", nameof(user));
+        }
+        AtUsers ??= new();
+        AtUsers.Add(u);
+        return this;
+    }
+
+    public IMessageBuilder SendTo(IUser user)
+    {
+        if (user is not User u)
+        {
+            throw new ArgumentException("user must be type User", nameof(user));
+        }
+        Receiver = u;
         return this;
     }
 
     public IMessageBuilder WithContent(string content)
     {
-        this.Content = content;
+        Content = content;
         return this;
     }
 
-    public IMessageBuilder WithVoice(string key)
+    IMessage IMessageBuilder.Build()
     {
-        this.Voice = new MultiMedia();
-        return this;
-    }
-
-    public IOutMessage Build()
-    {
-        return new SendMessageRequest
-        {
-            CgiRequest = new OutMessage()
-            {
-                Images = Images,
-                Content = Content,
-                ToUin = Uid,
-                AtUinLists = AtList,
-                Voice = Voice,
-                GroupCode = GroupCode,
-                ToType= ToType,
-            }
-        };
-    }
-
-    public IMessageBuilder CreateFriend(long sendToUid)
-    {
-        return new MessageBuilder { ToType = 1, Uid = sendToUid };
-    }
-
-    public IMessageBuilder CreateSession(long sendToUid, long groupId)
-    {
-        return new MessageBuilder { ToType = 3, Uid = sendToUid, GroupCode = groupId };
-    }
-
-    public IMessageBuilder CreateGroup(long groupId)
-    {
-        return new MessageBuilder() { ToType = 2, Uid = groupId };
+        return Build();
     }
 }

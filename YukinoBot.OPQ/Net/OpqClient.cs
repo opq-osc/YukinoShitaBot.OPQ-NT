@@ -4,13 +4,14 @@ using System.Net.WebSockets;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using YukinoBot.Abstraction;
+using YukinoBot.Entity;
 using YukinoBot.OPQ.Configuration;
 using YukinoBot.OPQ.Event;
 using YukinoBot.OPQ.Event.Base;
 
 namespace YukinoBot.OPQ.Net;
 
-public class OpqClient : IMessageReceiver
+public class OpqClient : IMessageReceiver<Entity.Message>
 {
     public OpqClient(OpqOptions options, ILogger<OpqClient> logger)
     {
@@ -20,6 +21,9 @@ public class OpqClient : IMessageReceiver
         this.logger = logger;
     }
 
+    public event EventHandler<IMessage>? OnMessage;
+    public event EventHandler<Entity.Message>? OnMessageGeneric;
+
     private ClientWebSocket? socket;
     private readonly CancellationTokenSource cancelationSource;
     private readonly string url;
@@ -27,8 +31,6 @@ public class OpqClient : IMessageReceiver
     private readonly long uin;
     private readonly ILogger logger;
 
-
-    public event EventHandler<IInMessage>? OnMessage;
     public event EventHandler<IEvent>? OnEvent;
 
     public async Task Start()
@@ -118,6 +120,7 @@ public class OpqClient : IMessageReceiver
             case "ON_EVENT_LOGIN_SUCCESS":
                 var eventLogin = socketEvent.CurrentPacket.EventData.Root.Deserialize<LoginEvent>();
                 if (eventLogin is null) return;
+                eventLogin.Time = DateTime.UtcNow;
                 OnEvent?.Invoke(this, eventLogin);
                 break;
             case "ON_EVENT_NETWORK_CHANGE":
@@ -168,27 +171,80 @@ public class OpqClient : IMessageReceiver
         if (msg == null) return;
 
         SetContent(msg);
-        if (msg.Content == string.Empty) return;
+        if (msg.Route == string.Empty) return;
 
         OnMessage?.Invoke(this, msg);
+        OnMessageGeneric?.Invoke(this, msg);
     }
 
     private static void SetContent(MessageEvent msg)
     {
-        if (msg.AtList.Count > 0)
+        if (msg.MessageBody?.AtUinLists?.Count > 0)
         {
-            foreach (var at in msg.MessageBody!.AtUinLists!)
+            foreach (var at in msg.MessageBody.AtUinLists)
             {
                 if (string.IsNullOrEmpty(at.Nick)) continue;
-                msg.MessageBody!.Content = msg.MessageBody!.Content.Replace($"@{at.Nick} ", string.Empty);
-                msg.MessageBody!.Content = msg.MessageBody!.Content.Replace($"@{at.Nick}", string.Empty);
+                msg.MessageBody.Content = msg.MessageBody.Content.Replace($"@{at.Nick} ", string.Empty);
+                msg.MessageBody.Content = msg.MessageBody.Content.Replace($"@{at.Nick}", string.Empty);
             }
-            msg.MessageBody!.Content = msg.MessageBody!.Content.Trim(' ');
+            msg.MessageBody.Content = msg.MessageBody.Content.Trim(' ');
         }
 
-        if (msg.TryGetVoice(out _)) msg.Content = "[$media:voice]";
-        else if (msg.TryGetVideo(out _)) msg.Content = "[$media:video]";
-        else if (msg.TryGetImages(out _)) msg.Content = $"[$media:image]{msg.MessageBody?.Content}";
-        else msg.Content = msg.MessageBody?.Content ?? string.Empty;
+        msg.Content = msg.MessageBody?.Content ?? string.Empty;
+        msg.AtUsers = msg.MessageBody?.AtUinLists?.Select(x => new User
+        {
+            SenderId = x.UserId,
+            Nick = x.Nick ?? string.Empty,
+            GroupId = msg.MessageHead.GroupInfo?.GroupCode
+        }) ?? Enumerable.Empty<User>();
+
+        msg.From = new User
+        {
+            SenderId = msg.MessageHead.SenderUin,
+            Nick = msg.MessageHead.SenderNick,
+            GroupId = msg.MessageHead.GroupInfo?.GroupCode
+        };
+
+        msg.To = new User
+        {
+            SenderId = msg.MessageHead.ToUin,
+            Nick = string.Empty,
+            GroupId = msg.MessageHead.GroupInfo?.GroupCode
+        };
+
+        var medias = new List<Media>();
+        msg.Medias = medias;
+
+        msg.Route = msg.MessageBody?.Content ?? string.Empty;
+
+        if (msg.MessageBody?.Images is not null)
+        {
+            msg.Route = $"[$media:image]{msg.MessageBody.Content}";
+            foreach (var image in msg.MessageBody.Images)
+            {
+                image.Type = "image";
+                medias.Add(image);
+            }
+        }
+        if (msg.MessageBody?.Voice is not null)
+        {
+            msg.Route = "[$media:voice]";
+            msg.MessageBody.Voice.Type= "voice";
+            medias.Add(msg.MessageBody.Voice);
+        }
+        if (msg.MessageBody?.Video is not null)
+        {
+            msg.Route = "[$media:video]";
+            // TODO 处理Video
+        }
+        
+        msg.Time = DateTime.UnixEpoch + TimeSpan.FromSeconds(msg.MessageHead.MsgTime);
+        msg.Source = msg.MessageHead.FromType switch
+        {
+            1 => "Friend",
+            2 => "Group",
+            3 => "Session",
+            _ => string.Empty
+        };
     }
 }

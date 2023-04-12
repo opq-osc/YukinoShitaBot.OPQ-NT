@@ -1,4 +1,5 @@
 using YukinoBot.Abstraction;
+using YukinoBot.Entity;
 
 namespace YukinoOPQ
 {
@@ -7,15 +8,18 @@ namespace YukinoOPQ
         private readonly ILogger<Worker> logger;
         private readonly IMessageReceiver messageReceiver;
         private readonly IMessageSender messageSender;
+        private readonly IMessageBuilderFactory msgBuilder;
 
-        public Worker(ILogger<Worker> logger, IMessageReceiver messageReceiver, IMessageSender messageSender)
+        public Worker(ILogger<Worker> logger, IMessageReceiver messageReceiver, IMessageSender messageSender, IMessageBuilderFactory msgBuilder)
         {
             this.logger = logger;
             this.messageReceiver = messageReceiver;
 
-            messageReceiver.OnMessage += OnMessage;
+            this.messageReceiver.OnMessage += OnMessage;
             messageReceiver.OnEvent += OnEvent;
+
             this.messageSender = messageSender;
+            this.msgBuilder = msgBuilder;
         }
 
         private void OnEvent(object? sender, IEvent e)
@@ -23,14 +27,15 @@ namespace YukinoOPQ
             
         }
 
-        private void OnMessage(object? sender, IInMessage e)
+        private void OnMessage(object? sender, IMessage msg)
         {
-            logger.LogInformation("Message received: {Msg}", e.Content);
-            if (e.AtList.Contains(1137361788) || e.Content.StartsWith("repeat"))
+            logger.LogInformation("Message received from: {Nick}\n{Msg}", msg.From.GetUserName(), msg.Content);
+            if (msg.AtUsers.Any(x => x.GetUserId() == "1137361788") || msg.Content.StartsWith("repeat"))
             {
-                var msg = e.CreateRepeat()
-                           .Build();
-                messageSender.Send(msg);
+                var retMsg = msgBuilder.CreateReply(msg)
+                                       .WithContent(msg.Content)
+                                       .Build();
+                messageSender.Send(retMsg);
             }
         }
 
