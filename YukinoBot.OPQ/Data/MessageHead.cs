@@ -15,7 +15,7 @@ public class MessageHead
     public int MsgType { get; set; }
     public int MsgSeq { get; set; }
     public int MsgTime { get; set; }
-    public int MsgRandom { get; set; }
+    public long MsgRandom { get; set; }
     public long MsgUid { get; set; }
 
     public JsonObject? C2CTempMessageHead { get; set; }
