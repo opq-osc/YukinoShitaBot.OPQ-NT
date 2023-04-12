@@ -2,7 +2,7 @@
 
 public interface IMessageReceiver
 {
-    event EventHandler<IInMessage>? OnMessage;
+    event EventHandler<IMessage>? OnMessage;
     event EventHandler<IEvent>? OnEvent;
 
     Task Start();

@@ -2,6 +2,5 @@
 
 public interface IMessageSender
 {
-    void Send(IOutMessage message);
+    void Send(IMessage message);
 }
-

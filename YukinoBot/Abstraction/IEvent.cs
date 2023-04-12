@@ -2,6 +2,9 @@
 
 public interface IEvent
 {
-    string RouteValue { get; }
+    string Route { get; }
+    string EventId { get; }
+    string? EventParameter { get; }
+    DateTime Time { get; }
 }
 
